@@ -11,7 +11,7 @@ import { getCurrentDate } from '../../agent/prompts.js';
  * Used in the system prompt to guide the LLM on when and how to use this tool.
  */
 export const FINANCIAL_SEARCH_DESCRIPTION = `
-Intelligent meta-tool for financial data research. Takes a natural language query and automatically routes to appropriate financial data sources for company financials, SEC filings, analyst estimates, and more.
+Intelligent meta-tool for financial data research. Takes a natural language query and automatically routes to appropriate financial data sources. Supports both US stocks (Financial Datasets API) and Japanese stocks (Yahoo Finance).
 
 ## When to Use
 
@@ -21,11 +21,13 @@ Intelligent meta-tool for financial data research. Takes a natural language quer
 - Analyst estimates and price targets
 - Company news and recent headlines
 - Insider trading activity
-- Current stock prices for equities
-- Historical stock prices over date ranges
+- Current stock prices for equities (US and Japanese)
+- Historical stock prices over date ranges (US and Japanese)
 - Cryptocurrency prices
 - Revenue segment breakdowns
 - Multi-company comparisons (pass the full query, it handles routing internally)
+- **Japanese stocks**: Use 4-digit ticker codes (e.g., 7203 for Toyota, 9984 for SoftBank)
+- **Cross-market comparisons**: Compare US and Japanese stocks in a single query
 
 ## When NOT to Use
 
@@ -60,20 +62,30 @@ import { getStockPrice, getStockPrices, getStockTickers } from './stock-price.js
 import { getHistoricalKeyRatios } from './key-ratios.js';
 import { getCompanyNews } from './news.js';
 
+// Japanese market tools (Yahoo Finance)
+import { getJpStockPrice, getJpStockPrices } from '../finance-jp/stock-price-jp.js';
+import { getJpFundamentals, getJpIncomeHistory } from '../finance-jp/fundamentals-jp.js';
+
 // All finance tools available for routing
 const FINANCE_TOOLS: StructuredToolInterface[] = [
-  // Price Data
+  // Price Data (US - Financial Datasets API)
   getStockPrice,
   getStockPrices,
   getStockTickers,
   getCryptoPriceSnapshot,
   getCryptoPrices,
   getCryptoTickers,
-  // Fundamentals
+  // Price Data (Japanese/International - Yahoo Finance)
+  getJpStockPrice,
+  getJpStockPrices,
+  // Fundamentals (US - Financial Datasets API)
   getIncomeStatements,
   getBalanceSheets,
   getCashFlowStatements,
   getAllFinancialStatements,
+  // Fundamentals (Japanese/International - Yahoo Finance)
+  getJpFundamentals,
+  getJpIncomeHistory,
   // Key Ratios, Snapshots & Estimates
   getKeyRatios,
   getHistoricalKeyRatios,
@@ -98,8 +110,11 @@ Given a user's natural language query about financial data, call the appropriate
 ## Guidelines
 
 1. **Ticker Resolution**: Convert company names to ticker symbols:
-   - Apple → AAPL, Tesla → TSLA, Microsoft → MSFT, Amazon → AMZN
-   - Google/Alphabet → GOOGL, Meta/Facebook → META, Nvidia → NVDA
+   - US stocks: Apple → AAPL, Tesla → TSLA, Microsoft → MSFT, Amazon → AMZN
+   - US stocks: Google/Alphabet → GOOGL, Meta/Facebook → META, Nvidia → NVDA
+   - Japanese stocks (4-digit codes): トヨタ/Toyota → 7203, ソニー/Sony → 6758, ソフトバンク/SoftBank → 9984
+   - Japanese stocks: 任天堂/Nintendo → 7974, キーエンス/Keyence → 6861, 三菱UFJ → 8306
+   - Japanese stocks: 日立 → 6501, 東京エレクトロン → 8035, 信越化学 → 4063
 
 2. **Date Inference**: Use schema-supported filters for date ranges:
    - "last year" → report_period_gte 1 year ago
@@ -107,7 +122,7 @@ Given a user's natural language query about financial data, call the appropriate
    - "past 5 years" → report_period_gte 5 years ago and limit 5 (annual) or 20 (quarterly)
    - "YTD" → report_period_gte Jan 1 of current year
 
-3. **Tool Selection**:
+3. **Tool Selection (US stocks — use Financial Datasets API tools)**:
    - For a current stock quote/snapshot (price, market cap now) → get_stock_price
    - For historical stock prices over a date range → get_stock_prices
    - For "historical" or "over time" data, use date-range tools
@@ -119,6 +134,14 @@ Given a user's natural language query about financial data, call the appropriate
    - For news, catalysts, "why did X move", recent announcements → get_company_news
    - For "why did X go up/down" → combine get_stock_price + get_company_news
    - For comprehensive analysis → get_all_financial_statements
+
+4. **Tool Selection (Japanese stocks — use Yahoo Finance tools)**:
+   - For Japanese stock tickers (4-digit numbers like 7203, 9984) → ALWAYS use get_jp_* tools
+   - For current price/snapshot → get_jp_stock_price
+   - For historical prices → get_jp_stock_prices
+   - For fundamentals (valuation, profitability, growth, dividend) → get_jp_fundamentals
+   - For income statement history → get_jp_income_history
+   - When unsure if US or Japanese → check ticker format: 4-digit number = Japanese
 
 4. **Efficiency**:
    - Prefer specific tools over general ones when possible

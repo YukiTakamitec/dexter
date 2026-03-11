@@ -1,5 +1,6 @@
 import { StructuredToolInterface } from '@langchain/core/tools';
 import { createFinancialSearch, createFinancialMetrics, createReadFilings } from './finance/index.js';
+import { getJpStockPrice, JP_STOCK_PRICE_DESCRIPTION, getJpFundamentals, JP_FUNDAMENTALS_DESCRIPTION } from './finance-jp/index.js';
 import { exaSearch, perplexitySearch, tavilySearch, WEB_SEARCH_DESCRIPTION, xSearchTool, X_SEARCH_DESCRIPTION } from './search/index.js';
 import { skillTool, SKILL_TOOL_DESCRIPTION } from './skill.js';
 import { webFetchTool, WEB_FETCH_DESCRIPTION } from './fetch/web-fetch.js';
@@ -49,6 +50,16 @@ export function getToolRegistry(model: string): RegisteredTool[] {
       name: 'read_filings',
       tool: createReadFilings(model),
       description: READ_FILINGS_DESCRIPTION,
+    },
+    {
+      name: 'jp_stock_price',
+      tool: getJpStockPrice,
+      description: JP_STOCK_PRICE_DESCRIPTION,
+    },
+    {
+      name: 'jp_fundamentals',
+      tool: getJpFundamentals,
+      description: JP_FUNDAMENTALS_DESCRIPTION,
     },
     {
       name: 'web_fetch',
