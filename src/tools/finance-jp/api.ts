@@ -1,4 +1,7 @@
-import YahooFinance from 'yahoo-finance2';
+import YahooFinanceModule from 'yahoo-finance2';
+
+// yahoo-finance2 v3 requires instantiation
+const yahooFinance = new (YahooFinanceModule as unknown as new () => typeof YahooFinanceModule)();
 
 /**
  * Yahoo Finance wrapper for Japanese and international stocks.
@@ -40,7 +43,7 @@ export interface QuoteResult {
 
 export async function getQuote(ticker: string): Promise<QuoteResult> {
   const symbol = normalizeTicker(ticker);
-  const quote = await YahooFinance.quote(symbol) as Record<string, unknown>;
+  const quote = await yahooFinance.quote(symbol) as Record<string, unknown>;
 
   return {
     ticker: symbol,
@@ -73,7 +76,7 @@ export async function getHistoricalPrices(
   interval: '1d' | '1wk' | '1mo' = '1d'
 ): Promise<HistoricalPrice[]> {
   const symbol = normalizeTicker(ticker);
-  const result = await YahooFinance.chart(symbol, {
+  const result = await yahooFinance.chart(symbol, {
     period1,
     period2,
     interval,
@@ -126,10 +129,10 @@ export async function getFundamentals(ticker: string): Promise<FundamentalData> 
   const symbol = normalizeTicker(ticker);
 
   const [summary, quoteData] = await Promise.all([
-    YahooFinance.quoteSummary(symbol, {
+    yahooFinance.quoteSummary(symbol, {
       modules: ['summaryProfile', 'financialData', 'defaultKeyStatistics'],
     }) as Promise<Record<string, Record<string, unknown>>>,
-    YahooFinance.quote(symbol) as Promise<Record<string, unknown>>,
+    yahooFinance.quote(symbol) as Promise<Record<string, unknown>>,
   ]);
 
   const fin = summary.financialData || {};
@@ -185,7 +188,7 @@ export async function getIncomeHistory(
     ? 'incomeStatementHistory'
     : 'incomeStatementHistoryQuarterly';
 
-  const result = await YahooFinance.quoteSummary(symbol, {
+  const result = await yahooFinance.quoteSummary(symbol, {
     modules: [moduleName as 'incomeStatementHistory'],
   }) as Record<string, unknown>;
 
