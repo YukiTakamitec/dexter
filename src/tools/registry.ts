@@ -1,6 +1,6 @@
 import { StructuredToolInterface } from '@langchain/core/tools';
 import { createFinancialSearch, createFinancialMetrics, createReadFilings } from './finance/index.js';
-import { getJpStockPrice, JP_STOCK_PRICE_DESCRIPTION, getJpFundamentals, JP_FUNDAMENTALS_DESCRIPTION } from './finance-jp/index.js';
+import { getJpStockPrice, JP_STOCK_PRICE_DESCRIPTION, getJpFundamentals, JP_FUNDAMENTALS_DESCRIPTION, searchEdinetFilings, EDINET_DESCRIPTION } from './finance-jp/index.js';
 import { exaSearch, perplexitySearch, tavilySearch, WEB_SEARCH_DESCRIPTION, xSearchTool, X_SEARCH_DESCRIPTION } from './search/index.js';
 import { skillTool, SKILL_TOOL_DESCRIPTION } from './skill.js';
 import { webFetchTool, WEB_FETCH_DESCRIPTION } from './fetch/web-fetch.js';
@@ -126,6 +126,15 @@ export function getToolRegistry(model: string): RegisteredTool[] {
       name: 'web_search',
       tool: tavilySearch,
       description: WEB_SEARCH_DESCRIPTION,
+    });
+  }
+
+  // Include EDINET if API key is configured
+  if (process.env.EDINET_API_KEY) {
+    tools.push({
+      name: 'edinet_filings',
+      tool: searchEdinetFilings,
+      description: EDINET_DESCRIPTION,
     });
   }
 

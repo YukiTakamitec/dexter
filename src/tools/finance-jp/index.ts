@@ -9,3 +9,8 @@ export {
   getJpIncomeHistory,
   JP_FUNDAMENTALS_DESCRIPTION,
 } from './fundamentals-jp.js';
+
+export {
+  searchEdinetFilings,
+  EDINET_DESCRIPTION,
+} from './edinet.js';
